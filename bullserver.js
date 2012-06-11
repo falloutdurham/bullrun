@@ -10,9 +10,9 @@ var players = {};
 var clients = {};
 
 
-Map.map = [[0,0,0], 
+Map.init([[0,0,0], 
            [0,9,2],
-           [0,1,9]];
+           [0,1,9]]);
 
 
 app.listen(2048);
