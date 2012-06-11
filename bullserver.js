@@ -27,6 +27,10 @@ app.get('/client', function(req, res) {
 
 
 io.sockets.on('connection', function (socket) {
+
+  // playerConnect - sent on player connect. Adds it to the Map and keeps a
+  // record of it for later
+
 	socket.on('playerConnect', function(username) {
 		id = createUserId(socket, 'player', username);	
     newPlayer = new Player(username);
@@ -42,10 +46,15 @@ io.sockets.on('connection', function (socket) {
 
 	});
 
+  // displayConnect - for the displays (e.g. the durhamplay.in website)
+
 	socket.on('displayConnect', function(username){
 		id = createUserId(socket, 'display', username);	
 		socket.emit('displayNewId', id);
 	});
+
+  // playerMove - what happens on a player move. This could result in death!
+  // playerMove - what happens on a player move. This could result in death!
 
 	socket.on('playerMove', function(id, move) {
 		if(clients.hasOwnProperty(id)) {
