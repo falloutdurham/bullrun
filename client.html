@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io.connect('http://10.2.3.14:2048');
+    socket.emit('displayConnect', "Client");
+
+    socket.on('update', function(move,id, name) {
+	console.log(name +" (id: "+id+") has moved: "+move);
+    });
+
+</script>
+</body>
+</html>

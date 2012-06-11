@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io.connect('http://localhost:2048');
+  var playerId ;
+    socket.emit('playerConnect', "Player");
+
+	socket.on('playerNewId', function(id) {
+		console.log("ID is: " + id);
+		playerId = id;
+	});
+
+</script>
+
+	<button name="Hi" onclick="socket.emit('playerMove', playerId, [0, 1])">isend</button>
+
+</body>
+</html>
