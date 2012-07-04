@@ -6,6 +6,7 @@
 //  0     - Space
 //  1     - Wall
 //  2-8   - Er, possible items. 2 is probably a torch
+//  8 - EXIT!
 //  9     - Spawn point
 
 
@@ -39,7 +40,30 @@ var Map = {
   // AJAX call during server start up
 
   init: function(map) {
-    this.map = map
+    this.map = map || 
+    [
+    [9,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,9],
+    [0,0,1,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1],
+    [0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,1,0],
+    [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+    [1,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+    [1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+    [0,0,0,0,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0],
+    [1,1,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,0],
+    [0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0],
+    [0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,8,0,0,1,1,1,1,0,1,1],
+    [1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,0,1],
+    [1,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,0,0],
+    [0,0,0,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,1],
+    [0,0,1,0,0,0,1,0,1,0,1,0,1,1,1,0,1,0,0,0],
+    [0,0,1,0,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0],
+    [9,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,9]
+    ];
+
   },
 
   // Helper function that converts the heading angle into a co-ord movement in
@@ -92,6 +116,9 @@ var Map = {
     var movementDirection = this.convertHeading(heading);
 
     player.heading = heading;
+
+    if (speed === 0)
+      return {moveStatus: true, contents: player.standingOn};
 
     if (player.x+movementDirection[0] < 0 || player.x+movementDirection[0] >= this.map[0].length ) {
       return {moveStatus: false, contents: "boundary"};
@@ -179,6 +206,10 @@ var Map = {
 
     }
     return false;
+  },
+
+  removePlayer: function(player) {
+    this.map[player.x][player.y] = player.standingOn;
   },
 
   test: function() {

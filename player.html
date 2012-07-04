@@ -1,20 +1,163 @@
 <!doctype html>
 <html>
 <body>
-<script src="/socket.io/socket.io.js"></script>
+
+<style>
+
+    #control-panel {
+      position: fixed;
+      top: 80%;
+    }
+
+    #maze {
+      position: relative;
+      top: 10%;
+      left: 25%;
+      width: 50%;
+      height: 75%;
+    }
+
+    .tile {
+      position: relative;
+      width: 5%;
+      float: left;
+      height: 5%;
+    }
+
+    .space {
+      background-color: black;
+    }
+
+    .wall {
+      background: blue;
+    }
+
+    .spawn {
+      background: red;
+    }
+
+    .exit {
+      background: yellow;
+    }
+
+  </style>
+
+
+<script src="http://localhost:2048/socket.io/socket.io.js"></script>
+
+
+  <div id="maze">
+ 
+
+
+  </div>
+
+
+<script>
+
+var map;
+
+function updateMap() {
+  for(var i = 0; i < map.length; i++) 
+  for(var j = 0; j < map[i].length; j++) {
+    var currentDiv = document.getElementById("tile-" + i +"-"+j);
+
+    if(map[i][j].type === 1)
+        currentDiv.setAttribute('class',"tile player");
+
+    switch(map[i][j]) {
+      case 0:
+        currentDiv.setAttribute('class',"tile space");
+        break;
+      case 1:
+        currentDiv.setAttribute('class',"tile wall");
+        break;
+      case 8:
+        currentDiv.setAttribute('class',"tile exit");
+        break
+      case 9:
+        currentDiv.setAttribute('class',"tile spawn");
+        break;
+
+    }
+    
+
+
+  }
+}
+
+function createMap() {
+
+for(var i = 0; i < map.length; i++) 
+  for(var j = 0; j < map[i].length; j++) {
+    var newDiv = document.createElement('div');
+    newDiv.setAttribute('id',"tile-" + i +"-"+j);
+    newDiv.innerHTML = "&nbsp;";
+
+    if(map[i][j].type === 1)
+        newDiv.setAttribute('class',"tile player");
+
+    switch(map[i][j]) {
+      case 0:
+        newDiv.setAttribute('class',"tile space");
+        break;
+      case 1:
+        newDiv.setAttribute('class',"tile wall");
+        break;
+      case 8:
+        newDiv.setAttribute('class',"tile exit");
+        break
+      case 9:
+        newDiv.setAttribute('class',"tile spawn");
+        break;
+
+    }
+    
+    var newNode = document.getElementById('maze').appendChild(newDiv);
+
+  }
+}
+</script>
 <script>
   var socket = io.connect('http://localhost:2048');
   var playerId ;
     socket.emit('playerConnect', "Player");
 
-	socket.on('playerNewId', function(id) {
+	socket.on('playerNewId', function(id, newMap) {
 		console.log("ID is: " + id);
+    map = newMap;
 		playerId = id;
 	});
 
+  socket.emit('displayConnect', "web-client");
+
+  socket.on('displayNewId', function(id, newMap){
+    map = newMap;
+    createMap();
+    
+  })
+
+  socket.on('displayUpdate', function(newMap) {
+    map = newMap;
+    updateMap();
+  })
+
+  socket.on('moveResult', function(moveResult, newMap) {
+
+    map = newMap;
+    updateMap();
+
+  })
+
 </script>
 
-	<button name="Hi" onclick="socket.emit('playerMove', playerId, [0, 1])">isend</button>
+<div id="control-panel">
+<button name="Hi" onclick="socket.emit('playerMove', playerId, [0, 1])">Up</button>
+
+<button name="Hi" onclick="socket.emit('playerMove', playerId, [180, 1])">Down</button>
+<button name="Hi" onclick="socket.emit('playerMove', playerId, [270, 1])">Left</button>
+<button name="Hi" onclick="socket.emit('playerMove', playerId, [90, 1])">Right</button>
+</div>
 
 </body>
 </html>

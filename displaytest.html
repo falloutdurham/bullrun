@@ -1,0 +1,102 @@
+<html>
+
+<body>
+
+  <style>
+
+    #maze {
+      position: relative;
+      top: 10%;
+      left: 25%;
+      width: 50%;
+      height: 75%;
+    }
+
+    .tile {
+      position: relative;
+      width: 5%;
+      float: left;
+      height: 5%;
+    }
+
+    .space {
+      background-color: black;
+    }
+
+    .wall {
+      background: blue;
+    }
+
+    .spawn {
+      background: red;
+    }
+
+    .exit {
+      background: yellow;
+    }
+
+  </style>
+
+  <div id="maze">
+ 
+
+
+</div>
+
+
+<script>
+var map = 
+
+[
+[9,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,9],
+[0,0,1,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1],
+[0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,1,0],
+[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+[1,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
+[1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+[0,0,0,0,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0],
+[1,1,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,0],
+[0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1],
+[1,0,1,1,1,1,1,1,1,1,8,0,0,1,1,1,1,0,1,1],
+[1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
+[1,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,0,1],
+[1,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,0,0],
+[0,0,0,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,1],
+[0,0,1,0,0,0,1,0,1,0,1,0,1,1,1,0,1,0,0,0],
+[0,0,1,0,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0],
+[9,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,9]
+];
+
+for(var i = 0; i < map.length; i++) 
+  for(var j = 0; j < map[i].length; j++) {
+    var newDiv = document.createElement('div');
+    newDiv.setAttribute('id',"tile-" + i +"-"+j);
+    switch(map[i][j]) {
+      case 0:
+        newDiv.setAttribute('class',"tile space");
+        break;
+      case 1:
+        newDiv.setAttribute('class',"tile wall");
+        break;
+      case 8:
+        newDiv.setAttribute('class',"tile exit");
+        break
+      case 9:
+        newDiv.setAttribute('class',"tile spawn");
+        break;
+    }
+    
+    var newNode = document.getElementById('maze').appendChild(newDiv);
+
+  }
+
+</script>
+
+
+</body>
+
+
+</html>
