@@ -209,6 +209,10 @@ var Map = {
   },
 
   removePlayer: function(player) {
+
+    if(!player)
+      return;
+
     this.map[player.x][player.y] = player.standingOn;
   },
 
