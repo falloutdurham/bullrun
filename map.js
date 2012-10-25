@@ -9,6 +9,12 @@
 //  8 - EXIT!
 //  9     - Spawn point
 
+// Scores:
+//
+//  100 per square
+//  1000 per PBR
+//  5000 getting to the exit
+
 
 
 function Player(id) {
@@ -19,6 +25,10 @@ function Player(id) {
   this.standingOn = 0,
   this.type = "", 
   this.id = id,
+  this.score = 0;
+  this.name = "Player 1";
+  this.dead = false;
+  this.torch = 1500;
  
   this.getId = function () {
     return this.id;
@@ -40,29 +50,31 @@ var Map = {
   // AJAX call during server start up
 
   init: function(map) {
+
     this.map = map || 
     [
-    [9,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,9],
+    [9,1,1,0,0,0,2,0,0,0,1,0,0,0,0,0,0,0,0,9],
     [0,0,1,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1],
     [0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,1,0],
-    [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0],
     [1,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
-    [1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+    [1,1,1,1,1,0,0,1,0,0,0,0,2,0,0,0,1,0,0,1],
     [0,0,0,0,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0],
     [1,1,1,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,0],
-    [0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,1,1,0,0,0],
+    [0,0,0,2,0,0,1,2,0,0,1,1,0,2,0,1,1,0,0,0],
     [0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1],
     [1,0,1,1,1,1,1,1,1,1,8,0,0,1,1,1,1,0,1,1],
-    [1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,2,1,1,1,1,0,0,0,0,0,0,0,2],
+    [1,0,0,0,0,0,0,0,1,2,0,1,1,1,1,1,1,1,0,1],
     [1,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,0,0],
+    [0,2,0,0,0,0,1,0,1,0,0,0,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,0,1,0,1,0,1,1,1,2,1,0,0,0,0,0],
     [0,0,0,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,1],
     [0,0,1,0,0,0,1,0,1,0,1,0,1,1,1,0,1,0,0,0],
     [0,0,1,0,1,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0],
-    [9,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,9]
+    [9,1,1,0,1,0,0,0,0,2,0,0,0,0,0,0,1,1,1,9]
     ];
+    this.createShadowMask();
 
   },
 
@@ -111,6 +123,7 @@ var Map = {
 
   move: function(player, heading, speed) {
     
+
     // attempt to move 
 
     var movementDirection = this.convertHeading(heading);
@@ -145,12 +158,22 @@ var Map = {
 
     // Now, we're going to handle the death and item pickup conditions.
 
+
+    // Score increase for moving
+
+    player.score += 100;
+
     var squareContents = player.standingOn;
 
-    if(player.type === Player.PLAYER && player.standingOn.type === Player.BULL)
-      return {moveStatus: true, contents: "Dead"}
-
+    if(player.type === Player.PLAYER && player.standingOn.type === Player.BULL) {
+      player.dead =true;
+      Map.removePlayer(player);
+      return {moveStatus: true, contents: "Dead", moveMessage: player.name + " has been squished!"}
+    }
     if(player.type === Player.BULL && player.standingOn.type === Player.PLAYER) {
+      moveMessage = squareContents.name + " has been squished!";
+      squareContents.dead = true;
+      Map.removePlayer(squareContents);
       squareContents = "Killed " + player.standingOn.id;
       player.standingOn = 0;
     }
@@ -161,10 +184,26 @@ var Map = {
     if(player.type === Player.PLAYER && (squareContents !== 0 || 9 ))
       player.standingOn = 0;
 
+    var moveMessage;
+
+    if(player.type === Player.PLAYER && squareContents === 2) {
+      player.score += 1000;
+      moveMessage = player.name + " picked up a PBR!"
+    }
+
     this.map[player.x][player.y] = player;
 
+    if(squareContents === 8) {
+      player.score += 5000;
+      moveMessage = player.name + " escaped the maze!"
+      //Okay, this isn't exactly right, but it does end the game...
+      player.dead = true;
+      this.map[player.x][player.y]= 8;
+    }
 
-    return {moveStatus: true, contents: squareContents};
+    
+    this.createShadowMap(player);
+    return {moveStatus: true, contents: squareContents, moveMessage: moveMessage};
 
   },
 
@@ -198,7 +237,9 @@ var Map = {
 
     if(entryPoints.length > 0) {
       var newSpawnPoint = entryPoints[Math.floor(Math.random()*entryPoints.length)]; 
+      //var newSpawnPoint = [0,0]; 
       this.map[newSpawnPoint[0]][newSpawnPoint[1]] = player;
+
       player.x = newSpawnPoint[0];
       player.y = newSpawnPoint[1];
       player.standingOn = 9;
@@ -218,38 +259,71 @@ var Map = {
 
   test: function() {
     var testPlayer = new Player("derek");
-var bull = new Player("BULL");
-bull.type = Player.BULL;
+    var bull = new Player("BULL");
+    bull.type = Player.BULL;
 
 
-console.log(testPlayer.getId());
-console.log(testPlayer.x);
+    console.log(testPlayer.getId());
+    console.log(testPlayer.x);
 
-Map.map = [[0,1,0], 
-           [0,9,2],
-           [0,1,9]];
+    Map.map = [[0,1,0], 
+               [0,9,2],
+               [0,1,9]];
 
 
-Map.addPlayer(testPlayer);
-Map.addPlayer(bull);
+    Map.addPlayer(testPlayer);
+    Map.addPlayer(bull);
 
-console.log(Map.map);
+    console.log(Map.map);
 
-console.log(Map.move(bull, 270,0));
-console.log(Map.map);
+    console.log(Map.move(bull, 270,0));
+    console.log(Map.map);
 
-console.log(Map.move(bull, 0,0));
-console.log(Map.map);
+    console.log(Map.move(bull, 0,0));
+    console.log(Map.map);
 
-console.log(Map.move(bull, 270,0));
-console.log(Map.map);
+    console.log(Map.move(bull, 270,0));
+    console.log(Map.map);
 
+  },
+
+  // But what if we constructed a shadow map that could be applied as a mask to
+  // the regular map and then returned a map that could be sent to the player?
+  // i.e. NO CHEATING! :D
+
+  createShadowMap: function(player) {
+
+    for(var i=0; i < this.shadowMap.length; i++) {
+      for(var j=0; j < this.shadowMap[0].length; j++) {
+        if(this.shadowMap[i][j]) {
+          this.shadowMap[i][j] = this.map[i][j];}
+        else
+          this.shadowMap[i][j] = 0;
+      }
+    }    
+    console.log(this.shadowMap);
+  },
+
+  createShadowMask: function() {
+    var shadowMapLength = this.map[0].length;
+    var shadowMapHeight = this.map.length;
+
+    this.shadowMap = new Array();
+
+    for(var i=0; i < shadowMapHeight; i++) {
+      this.shadowMap[i] = new Array();
+      for(var j=0; j < shadowMapHeight; j++) {
+        this.shadowMap[i][j] = 1;
+      }
+
+    }
   }
-
 
 };
 
 
 exports.Map = Map;
 exports.Player = Player;
+
+
 

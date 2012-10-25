@@ -9,6 +9,12 @@
       top: 80%;
     }
 
+    #messages {
+      position: fixed;
+      top: 90%;
+    }
+
+
     #maze {
       position: relative;
       top: 10%;
@@ -40,6 +46,16 @@
       background: yellow;
     }
 
+    .player {}
+
+    .bull {
+      background: brown;
+    }
+
+    .pbr {
+      background: pink;
+    }
+
   </style>
 
 
@@ -65,6 +81,10 @@ function updateMap() {
     if(map[i][j].type === 1)
         currentDiv.setAttribute('class',"tile player");
 
+    if(map[i][j].type === 2)
+        currentDiv.setAttribute('class',"tile bull");
+
+
     switch(map[i][j]) {
       case 0:
         currentDiv.setAttribute('class',"tile space");
@@ -72,6 +92,10 @@ function updateMap() {
       case 1:
         currentDiv.setAttribute('class',"tile wall");
         break;
+      case 2:
+        currentDiv.setAttribute('class',"tile pbr");
+        break;
+        
       case 8:
         currentDiv.setAttribute('class',"tile exit");
         break
@@ -94,8 +118,13 @@ for(var i = 0; i < map.length; i++)
     newDiv.setAttribute('id',"tile-" + i +"-"+j);
     newDiv.innerHTML = "&nbsp;";
 
+    
     if(map[i][j].type === 1)
         newDiv.setAttribute('class',"tile player");
+
+    if(map[i][j].type === 2)
+        newDiv.setAttribute('class',"tile bull");
+
 
     switch(map[i][j]) {
       case 0:
@@ -104,6 +133,10 @@ for(var i = 0; i < map.length; i++)
       case 1:
         newDiv.setAttribute('class',"tile wall");
         break;
+      case 2:
+        newDiv.setAttribute('class',"tile pbr");
+        break;
+        
       case 8:
         newDiv.setAttribute('class',"tile exit");
         break
@@ -117,11 +150,13 @@ for(var i = 0; i < map.length; i++)
 
   }
 }
+
 </script>
 <script>
   var socket = io.connect('http://localhost:2048');
   var playerId ;
-    socket.emit('playerConnect', "Player");
+    socket.emit('playerConnect', "Player 1");
+    socket.emit('displayConnect', "web-client");
 
 	socket.on('playerNewId', function(id, newMap) {
 		console.log("ID is: " + id);
@@ -129,7 +164,7 @@ for(var i = 0; i < map.length; i++)
 		playerId = id;
 	});
 
-  socket.emit('displayConnect', "web-client");
+  
 
   socket.on('displayNewId', function(id, newMap){
     map = newMap;
@@ -137,16 +172,22 @@ for(var i = 0; i < map.length; i++)
     
   })
 
-  socket.on('displayUpdate', function(newMap) {
+  socket.on('displayUpdate', function(newMap, moveResult) {
     map = newMap;
     updateMap();
   })
 
-  socket.on('moveResult', function(moveResult, newMap) {
+  socket.on('moveResult', function(moveResult, newMap, player) {
 
     map = newMap;
-    updateMap();
+    //updateMap();
+    document.getElementById('score').textContent = player.score;
 
+  })
+
+  socket.on('message', function(newMessage) {
+    console.log(newMessage);
+    document.getElementById('message').textContent = newMessage; 
   })
 
 </script>
@@ -158,6 +199,15 @@ for(var i = 0; i < map.length; i++)
 <button name="Hi" onclick="socket.emit('playerMove', playerId, [270, 1])">Left</button>
 <button name="Hi" onclick="socket.emit('playerMove', playerId, [90, 1])">Right</button>
 </div>
+
+
+<div id="messages">
+<div id="message"></div>
+<div id="score"></div>
+</div>
+
+
+
 
 </body>
 </html>

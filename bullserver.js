@@ -1,3 +1,6 @@
+// Bullserver.js - handles communication between players, display clients, and
+//                 the map.
+
 var app = require('express').createServer()
   , io = require('socket.io').listen(app),
     crypto = require('crypto'),
@@ -8,12 +11,8 @@ var Player = GameObjects.Player;
 
 var players = {};
 var clients = {};
-
+var newGame = true;
 var debugMap = false;
-
-//Map.init([[0,0,0], 
- //          [0,9,2],
-  //         [0,1,9]]);
 
 Map.init();
 
@@ -27,6 +26,9 @@ app.get('/client', function(req, res) {
   res.sendfile(__dirname + '/client.html');
 });
 
+app.get('/admin', function(req, res) {
+  res.sendfile(__dirname + '/admin.html');
+});
 
 io.sockets.on('connection', function (socket) {
 
@@ -34,21 +36,35 @@ io.sockets.on('connection', function (socket) {
   // record of it for later
 
 	socket.on('playerConnect', function(username, type) {
+    if(newGame) {
+      Map.init();
+      newGame = false;
+    }
+
+    socket.leave('potential');
 		id = createUserId(socket, 'player', username);	
-    newPlayer = new Player(username);
+    newPlayer = new Player();
+    newPlayer.name = username;
     
     newPlayer.type = type;
+
+    if(type === Player.BULL) {
+      io.sockets.in('display').emit('message', "The Bull has entered!");
+    } else 
+      io.sockets.in('display').emit('message', username+" has entered!");
+      
     
     newPlayer.id = id;
     isPlayerAdded = Map.addPlayer(newPlayer);
     players[id] = newPlayer;
     console.log(isPlayerAdded);
-    if(isPlayerAdded)
-
+   
     if(debugMap)
       console.log(Map.map);
 
-		  socket.emit('playerNewId', id, Map.map);
+		socket.emit('playerNewId', id, Map.map, newPlayer);
+    io.sockets.in('display').emit('displayUpdate', Map.map);  
+    io.sockets.in('display').emit('status', players);
 
 	});
 
@@ -62,26 +78,39 @@ io.sockets.on('connection', function (socket) {
   // playerMove - what happens on a player move. This could result in death!
 
 	socket.on('playerMove', function(id, move) {
+
 		if(clients.hasOwnProperty(id)) {
+
+    
+      if(players[id] && players[id].dead) {
+
+        socket.emit('dead');
+        socket.leave(socket.room);
+        socket.join('potential');
+        delete players[id];
+        delete clients[id];
+        io.sockets.in('display').emit('displayUpdate', Map.map);
+
+        return;
+      }
 
     var moveResult = Map.move(players[id], move[0], move[1]);
 
-    // depending on moveResult.contents, fire a new event to the clients
-    // Events:
-    // Move
-    // Dead
-    // Escape
-    // Pickup
+    // Send the message back to the clients/displays if present
 
-    socket.emit('moveResult', moveResult, Map.map); 
+    if(moveResult.moveMessage) {
+      io.sockets.in('display').emit('message', moveResult.moveMessage);
+      message(moveResult.moveMessage, socket);
+    }
 
-
+    socket.emit('moveResult', moveResult, Map.map, players[id]); 
 
 		console.log(id + " has moved: " + moveResult.moveStatus);
-    if(debugMap)
-      console.log(Map.map);
-		//socket.broadcast.to('display').emit('displayUpdate', move, id, clients[id]);}
-    socket.broadcast.to('display').emit('displayUpdate', Map.map);}
+
+    io.sockets.in('display').emit('displayUpdate', Map.map);
+    io.sockets.in('display').emit('status', players);
+
+   }
 	});
 
 	socket.on('disconnect', function() {
@@ -98,17 +127,49 @@ io.sockets.on('connection', function (socket) {
 
 	});
 
+  socket.on('startNewGame', function(playerName) {
+    newGame = true;
+    io.sockets.in('potential').emit('pleaseJoinGame', playerName);
+  });
+
+  socket.on('available', function() {
+    socket.join('potential');
+  });
+
+  socket.on('sendInTheBull', function() {
+    io.sockets.in('potential').emit('enterTheBull');
+  });
+
+  socket.on('torchDecrease', function(id) {
+      if(clients.hasOwnProperty(id)) {
+        players[id].torch -= 1; 
+        socket.emit('getTorch', players[id].torch);
+
+        if(players[id].torch < 0) {
+          // DEAD!
+          players[id].dead = true;
+          Map.removePlayer(players[id]);
+          io.sockets.in('display').emit('message', players[id].name + " is in the dark!");
+        }
+      }
+  });
 });
+
+
 
 function createUserId(socket, type, username) {
 
 	newId = crypto.createHash('md5').update(""+(new Date()).getTime()).digest('hex');
-  		socket.username = username;
-      socket.playerId = newId;
-                clients[newId] = username;
-		socket.join(type);
-		socket.room = type;
-                console.log(username + " has connected!");
-		return newId;
+  socket.username = username;
+  socket.playerId = newId;
+  clients[newId] = username;
+  socket.join(type);
+  socket.room = type;
+  console.log(username + " has connected!");
+  return newId;
 
+}
+
+function message(newMessage, socket) {
+  socket.broadcast.to('display').emit('message', newMessage);
 }

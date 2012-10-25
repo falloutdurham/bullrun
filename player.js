@@ -8,16 +8,31 @@ var r = redis.createClient();
 var socket = io.connect('http://localhost:2048');
 var playerId ;
 
+
 socket.on('playerNewId', function(id) {
+                playing = true;
                 console.log("ID is: " + id);
                 playerId = id;
                 r.set('torch', 255, function(){});
+                torch = 300;
                 setInterval(playerLoop, 200);
         });
 
-socket.emit('playerConnect', "Player", 1);
+
+
+socket.on('pleaseJoinGame', function(playerName){
+  socket.emit('playerConnect', playerName, 1);  
+});
+
+
+socket.on('dead', function(){
+  playing = false;
+});
+
+socket.emit('available');
 
 function playerLoop() {
+  if(playing) {
                   
   var move = r.lpop("playerMoves", function(err, reply) {
     if(reply)
@@ -25,14 +40,18 @@ function playerLoop() {
   });
   
   // Let the torch glow a bit first!
-
-  torch = torch-1;
-  if(torch < 255)
-    r.set('torch', torch, function(){});
-
+  socket.emit('torchDecrease', playerId);
 
 }
+}
 
+
+socket.on('getTorch', function(newTorch){
+    torch = newTorch;
+   if(torch < 255)
+    r.set('torch', torch, function(){});
+
+})
 
 socket.on('moveResult', function(moveResult){
   
